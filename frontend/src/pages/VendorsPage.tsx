@@ -7,6 +7,7 @@ import {
 import type { Vendor } from "../api/client";
 import { VendorTable } from "../components/VendorTable";
 import { VendorForm } from "../components/VendorForm";
+import { Modal } from "../components/Modal";
 
 type SortDir = "asc" | "desc";
 
@@ -57,11 +58,12 @@ export function VendorsPage() {
           v.category.toLowerCase().includes(categoryFilter.trim().toLowerCase())
         )
       : list;
-
     return [...filtered].sort((a, b) =>
       ratingSort === "asc" ? a.rating - b.rating : b.rating - a.rating
     );
   }, [vendors, categoryFilter, ratingSort]);
+
+  const isModalOpen = showForm || !!editing;
 
   return (
     <div className="max-w-5xl mx-auto p-6">
@@ -86,7 +88,7 @@ export function VendorsPage() {
           Sort by rating: {ratingSort.toUpperCase()}
         </button>
 
-        {!showForm && !editing && (
+        {!isModalOpen && (
           <button
             onClick={() => setShowForm(true)}
             className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-indigo-600 border border-indigo-400 rounded-md hover:bg-indigo-50 transition"
@@ -96,7 +98,22 @@ export function VendorsPage() {
         )}
       </div>
 
-      {(showForm || editing) && (
+      {loading && <p className="text-sm text-gray-500">Loading...</p>}
+      {error && <p className="text-red-600">{error}</p>}
+
+      {vendors && (
+        <VendorTable vendors={visibleVendors} onEdit={(v) => setEditing(v)} />
+      )}
+
+      {/* Modal with form */}
+      <Modal
+        open={isModalOpen}
+        title={editing ? "Edit Vendor" : "Add Vendor"}
+        onClose={() => {
+          setShowForm(false);
+          setEditing(null);
+        }}
+      >
         <VendorForm
           initial={editing}
           onSubmit={editing ? handleUpdate : handleCreate}
@@ -105,14 +122,7 @@ export function VendorsPage() {
             setEditing(null);
           }}
         />
-      )}
-
-      {loading && <p className="text-sm text-gray-500">Loading...</p>}
-      {error && <p className="text-red-600">{error}</p>}
-
-      {vendors && (
-        <VendorTable vendors={visibleVendors} onEdit={(v) => setEditing(v)} />
-      )}
+      </Modal>
     </div>
   );
 }
