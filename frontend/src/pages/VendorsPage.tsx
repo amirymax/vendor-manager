@@ -18,7 +18,6 @@ export function VendorsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Vendor | null>(null);
 
-  // NEW: filter & sort controls
   const [categoryFilter, setCategoryFilter] = useState("");
   const [ratingSort, setRatingSort] = useState<SortDir>("desc");
 
@@ -51,7 +50,6 @@ export function VendorsPage() {
     await load();
   }
 
-  // Apply filter + sort (memoized)
   const visibleVendors = useMemo(() => {
     const list = vendors ?? [];
     const filtered = categoryFilter.trim()
@@ -60,37 +58,41 @@ export function VendorsPage() {
         )
       : list;
 
-    const sorted = [...filtered].sort((a, b) =>
+    return [...filtered].sort((a, b) =>
       ratingSort === "asc" ? a.rating - b.rating : b.rating - a.rating
     );
-    return sorted;
   }, [vendors, categoryFilter, ratingSort]);
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: 20 }}>
-      <h1 style={{ marginBottom: 16 }}>📦 Vendors</h1>
+    <div className="max-w-5xl mx-auto p-6">
+      <div className="flex items-center gap-2 mb-6">
+        <span className="text-2xl">📦</span>
+        <h1 className="text-2xl font-semibold">Vendors</h1>
+      </div>
 
       {/* Controls */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+      <div className="flex flex-wrap items-center gap-3 mb-6">
         <input
           placeholder="Filter by category..."
+          className="px-3 py-2 border rounded-md text-sm"
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          style={{
-            padding: "8px",
-            borderRadius: 6,
-            border: "1px solid #ccc",
-            minWidth: 220,
-          }}
         />
+
         <button
           onClick={() => setRatingSort((s) => (s === "asc" ? "desc" : "asc"))}
+          className="px-3 py-2 text-sm border rounded-md"
         >
-          {`Sort by rating: ${ratingSort.toUpperCase()}`}
+          Sort by rating: {ratingSort.toUpperCase()}
         </button>
 
         {!showForm && !editing && (
-          <button onClick={() => setShowForm(true)}>➕ Add Vendor</button>
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-indigo-600 border border-indigo-400 rounded-md hover:bg-indigo-50 transition"
+          >
+            <span>➕</span> Add Vendor
+          </button>
         )}
       </div>
 
@@ -105,8 +107,8 @@ export function VendorsPage() {
         />
       )}
 
-      {loading && <p>Loading...</p>}
-      {error && <p style={{ color: "red" }}>Error: {error}</p>}
+      {loading && <p className="text-sm text-gray-500">Loading...</p>}
+      {error && <p className="text-red-600">{error}</p>}
 
       {vendors && (
         <VendorTable vendors={visibleVendors} onEdit={(v) => setEditing(v)} />
