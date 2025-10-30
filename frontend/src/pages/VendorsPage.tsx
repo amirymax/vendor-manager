@@ -8,6 +8,7 @@ import type { Vendor } from "../api/client";
 import { VendorTable } from "../components/VendorTable";
 import { VendorForm } from "../components/VendorForm";
 import { Modal } from "../components/Modal";
+import { Toast } from "../components/Toast";
 
 type SortDir = "asc" | "desc";
 
@@ -22,13 +23,26 @@ export function VendorsPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [ratingSort, setRatingSort] = useState<SortDir>("desc");
 
+  // toast state
+  const [toastOpen, setToastOpen] = useState(false);
+  const [toastKind, setToastKind] = useState<"success" | "error" | "info">("info");
+  const [toastTitle, setToastTitle] = useState<string>("");
+
+  function showToast(kind: "success" | "error" | "info", title: string) {
+    setToastKind(kind);
+    setToastTitle(title);
+    setToastOpen(true);
+  }
+
   async function load() {
     setLoading(true);
     setError(null);
     try {
       setVendors(await apiListVendors());
     } catch (err: any) {
-      setError(err.message || "Failed to load vendors");
+      const msg = err?.message || "Failed to load vendors";
+      setError(msg);
+      showToast("error", msg);
     } finally {
       setLoading(false);
     }
@@ -39,16 +53,33 @@ export function VendorsPage() {
   }, []);
 
   async function handleCreate(data: any) {
-    await apiCreateVendor(data);
-    setShowForm(false);
-    await load();
+    try {
+      await apiCreateVendor(data);
+      showFormClose();
+      await load();
+      showToast("success", "Vendor created");
+    } catch (err: any) {
+      showToast("error", err?.message || "Failed to create vendor");
+      throw err; // форма сама покажет текст
+    }
   }
 
   async function handleUpdate(data: any) {
     if (!editing) return;
-    await apiUpdateVendor(editing.id, data);
+    try {
+      await apiUpdateVendor(editing.id, data);
+      showFormClose();
+      await load();
+      showToast("success", "Vendor updated");
+    } catch (err: any) {
+      showToast("error", err?.message || "Failed to update vendor");
+      throw err;
+    }
+  }
+
+  function showFormClose() {
+    setShowForm(false);
     setEditing(null);
-    await load();
   }
 
   const visibleVendors = useMemo(() => {
@@ -106,23 +137,17 @@ export function VendorsPage() {
       )}
 
       {/* Modal with form */}
-      <Modal
-        open={isModalOpen}
-        title={editing ? "Edit Vendor" : "Add Vendor"}
-        onClose={() => {
-          setShowForm(false);
-          setEditing(null);
-        }}
-      >
-        <VendorForm
-          initial={editing}
-          onSubmit={editing ? handleUpdate : handleCreate}
-          onCancel={() => {
-            setShowForm(false);
-            setEditing(null);
-          }}
-        />
+      <Modal open={isModalOpen} title={editing ? "Edit Vendor" : "Add Vendor"} onClose={showFormClose}>
+        <VendorForm initial={editing} onSubmit={editing ? handleUpdate : handleCreate} onCancel={showFormClose} />
       </Modal>
+
+      {/* Toast */}
+      <Toast
+        open={toastOpen}
+        kind={toastKind}
+        title={toastTitle}
+        onClose={() => setToastOpen(false)}
+      />
     </div>
   );
 }
