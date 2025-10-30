@@ -1,0 +1,5 @@
+*.sqlite
+__init__.py
+backend/env
+
+.env.local
